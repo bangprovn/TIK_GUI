@@ -253,10 +253,34 @@ class set_utils:
         self.load_set()
 
 
-settings = set_utils(setfile)
-settings.load_set()
-if int(settings.oobe) < 2:
-    Welcome(step=int(settings.oobe))
+def init_settings():
+    """Initialize settings and run OOBE if needed. Called by CLI entry point."""
+    global settings
+    settings = set_utils(setfile)
+    settings.load_set()
+    if int(settings.oobe) < 2:
+        Welcome(step=int(settings.oobe))
+
+def init_settings_only():
+    """Initialize settings without OOBE or I/O hooks. Used by GUI."""
+    global settings
+    settings = set_utils.__new__(set_utils)
+    settings.path = setfile
+    settings.language_dict = {}
+    import json
+    with open(setfile, 'r') as ss:
+        data = json.load(ss)
+        for v in data:
+            setattr(settings, v, data[v])
+
+# Auto-init for CLI and when imported by other CLI scripts
+if not os.environ.get('TIK_GUI_MODE'):
+    settings = set_utils(setfile)
+    settings.load_set()
+    if int(settings.oobe) < 2:
+        Welcome(step=int(settings.oobe))
+else:
+    init_settings_only()
 
 class upgrade:
     update_json = 'https://mirror.ghproxy.com/https://raw.githubusercontent.com/ColdWindScholar/Upgrade/main/TIK.json'
@@ -879,7 +903,7 @@ class Tool:
 
 
 def get_all_file_paths(directory) -> Ellipsis:
-    # 初始化文件路径列表
+    # Initialize file path list
     for root, directories, files in os.walk(directory):
         for filename in files:
             yield os.path.join(root, filename)
@@ -896,7 +920,7 @@ class zip_file:
                 f"A file with the same name exists:{file}，Automatically renamed to {(relpath := path + utils.v_code() + file)}")
         with zipfile.ZipFile(relpath, 'w', compression=zipfile.ZIP_DEFLATED,
                              allowZip64=True) as zip_:
-            # 遍历写入文件
+            # Iterate and write files
             for file in get_all_file_paths('.'):
                 print(f"Writing:%s" % file)
                 try:
@@ -1066,7 +1090,7 @@ class unmpk:
             print("\033[36mThe following plugins will be uninstalled simultaneously")
             print("\n".join(self.arr2))
             print("\033[0m\n")
-        self.unloop() if input("Uninstall? [1/0]") == '1' else ysuc("取消")
+        self.unloop() if input("Uninstall? [1/0]") == '1' else ysuc("Cancelled")
         input("Enter to continue")
 
     def lfdep(self, name=None):
@@ -1095,7 +1119,7 @@ class unmpk:
             if os.path.exists(self.moddir + os.sep + name):
                 shutil.rmtree(self.moddir + os.sep + name)
             ywarn(f"Uninstall {name} Fail！") if os.path.exists(self.moddir + os.sep + name) else yecho(
-                f"卸载{name}成功！")
+                f"Uninstall {name} successful!")
 
 
 def unpack_choo(project):
@@ -1695,7 +1719,7 @@ def packsuper(project):
          os.path.isfile(os.path.join(project + os.sep + 'super', p))]) + 409600
     tool_auto_size = versize(tool_auto_size)
     checkssize = input(
-        f"Choose Super.img Size:[1]9126805504 [2]10200547328 [3]16106127360 [4]{tool_auto_size} [5]自定义")
+        f"Choose Super.img Size:[1]9126805504 [2]10200547328 [3]16106127360 [4]{tool_auto_size} [5]Custom")
     if checkssize == '1':
         supersize = 9126805504
     elif checkssize == '2':
@@ -1812,7 +1836,7 @@ def packpayload(project):
     else:
         os.makedirs(project + '/payload')
     ywarn(f"Please place all partition images on {project}payload！")
-    yecho("这项功能很耗时、很费CPU、很费内存，若无官方签名则意义不大，请考虑后使用")
+    yecho("This feature is time-consuming, CPU and memory intensive. Without an official signature it has little use. Please consider before using.")
     if not os.listdir(project + '/payload'):
         print(
             "It seems that you do not have any partitions to package. Do you want to move the following partitions for packaging：")
@@ -1830,7 +1854,7 @@ def packpayload(project):
          os.listdir(project + '/payload') if
          os.path.isfile(os.path.join(project + os.sep + 'payload', p))]) + 409600
     tool_auto_size = versize(tool_auto_size)
-    checkssize = input(f"Choose Super.img Size:[1]9126805504 [2]10200547328 [3]{tool_auto_size} [5]自定义")
+    checkssize = input(f"Choose Super.img Size:[1]9126805504 [2]10200547328 [3]{tool_auto_size} [5]Custom")
     if checkssize == '1':
         supersize = 9126805504
     elif checkssize == '2':
@@ -1987,7 +2011,7 @@ def unpack(file, info, project):
                 for fd1 in sorted(
                         [f for f in os.listdir(project) if f.startswith(os.path.basename(fd).rsplit('.', 1)[0] + ".")],
                         key=lambda x: int(x.rsplit('.')[3])):
-                    print("合并%s到%s" % (fd1, os.path.basename(fd).rsplit('.', 1)[0]))
+                    print("Merging %s to %s" % (fd1, os.path.basename(fd).rsplit('.', 1)[0]))
                     with open(project + os.sep + fd1, 'rb') as nfd:
                         ofd.write(nfd.read())
                     os.remove(project + os.sep + fd1)
@@ -2067,4 +2091,10 @@ def autounpack(project):
 
 
 if __name__ == '__main__':
-    Tool().main()
+    if '--gui' in sys.argv:
+        os.environ['TIK_GUI_MODE'] = '1'
+        from gui.app import TIKApp
+        app = TIKApp()
+        app.start()
+    else:
+        Tool().main()

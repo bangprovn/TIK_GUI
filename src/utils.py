@@ -134,7 +134,7 @@ class aesencrypt:
 class dbkxyt:
     def __init__(self, work, code, extra):
         if not work:
-            print('文件夹不存在')
+            print('Folder does not exist')
             return
         if os.path.exists((dir_ := work) + "firmware-update"):
             os.rename(dir_ + "firmware-update", dir_ + "images")
@@ -397,9 +397,9 @@ def v_code(num=6) -> str:
     ret = ""
     for i in range(num):
         num = randint(0, 9)
-        # num = chr(random.randint(48,57))#ASCII表示数字
-        letter = chr(randint(97, 122))  # 取小写字母
-        Letter = chr(randint(65, 90))  # 取大写字母
+        # num = chr(random.randint(48,57))# ASCII digits
+        letter = chr(randint(97, 122))  # lowercase letters
+        Letter = chr(randint(65, 90))  # uppercase letters
         s = str(choice([num, letter, Letter]))
         ret += s
     return ret

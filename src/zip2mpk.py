@@ -11,14 +11,14 @@ def extract(path, path2):
 
 
 def get_all_file_paths(directory) -> Ellipsis:
-    # 初始化文件路径列表
+    # Initialize file path list
     file_paths = []
     for root, directories, files in os.walk(directory):
         for filename in files:
-            # 连接字符串形成完整的路径
+            # Join strings to form the complete path
             file_paths.append(os.path.join(root, filename))
 
-    # 返回所有文件路径
+    # Return all file paths
     return file_paths
 
 
@@ -26,9 +26,9 @@ def v_code(num=6) -> str:
     ret = ""
     for i in range(num):
         num = randint(0, 9)
-        # num = chr(random.randint(48,57))#ASCII表示数字
-        letter = chr(randint(97, 122))  # 取小写字母
-        Letter = chr(randint(65, 90))  # 取大写字母
+        # num = chr(random.randint(48,57))# ASCII digits
+        letter = chr(randint(97, 122))  # lowercase letters
+        Letter = chr(randint(65, 90))  # uppercase letters
         s = str(choice([num, letter, Letter]))
         ret += s
     return ret
@@ -48,7 +48,7 @@ def modify(path):
 
 def export(path, name, local):
     if not path:
-        print("路径不存在")
+        print("Path does not exist")
         return 1
     (info_ := ConfigParser())['module'] = {
         'name': f'{name}',
@@ -63,11 +63,11 @@ def export(path, name, local):
     with zipfile.ZipFile((buffer := BytesIO()), 'w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) as mpk:
         os.chdir(path)
         for i in get_all_file_paths("."):
-            print(f"正在写入:%s" % i.rsplit(".\\")[1])
+            print(f"Writing: %s" % i.rsplit(".\\")[1])
             try:
                 mpk.write(i)
             except Exception as e:
-                print("写入失败:{}{}".format(i, e))
+                print("Write failed: {}{}".format(i, e))
     with zipfile.ZipFile("".join([local, os.sep, name, ".mpk"]), 'w',
                          compression=zipfile.ZIP_DEFLATED, allowZip64=True) as mpk2:
         mpk2.writestr('main.zip', buffer.getvalue())
@@ -76,21 +76,21 @@ def export(path, name, local):
     if os.path.exists(local + os.sep + name + ".mpk"):
         return local + os.sep + name + ".mpk"
     else:
-        print("打包%s失败" % (local + os.sep + name + ".mpk"))
+        print("Packing %s failed" % (local + os.sep + name + ".mpk"))
         return False
 
 
 def main(path, local):
     if not os.path.isfile(path):
-        print("非文件")
+        print("Not a file")
         return
     elif zipfile.is_zipfile(path):
-        print(f"正在处理:{path}")
+        print(f"Processing: {path}")
         with tempfile.TemporaryDirectory() as tmpdirname:
             extract(path, tmpdirname)
-            print("正在修改主脚本")
+            print("Modifying main script")
             modify(tmpdirname)
-            print("打包为MPK")
+            print("Packing as MPK")
             out = export(tmpdirname, os.path.basename(path.split('.')[0]), os.path.dirname(path))
         os.chdir(local)
         try:
@@ -99,5 +99,5 @@ def main(path, local):
             pass
         return out
     else:
-        print("文件格式异常！")
+        print("File format error!")
         return None

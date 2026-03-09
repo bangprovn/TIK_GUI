@@ -39,7 +39,9 @@ def handle_sigint(signum, frame):
     done_event.set()
 
 
-signal.signal(signal.SIGINT, handle_sigint)
+import threading
+if threading.current_thread() is threading.main_thread():
+    signal.signal(signal.SIGINT, handle_sigint)
 
 
 def copy_url(task_id: TaskID, url: str, path: str) -> None:
