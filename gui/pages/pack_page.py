@@ -482,6 +482,13 @@ class PackPage(BasePage):
 
             self._parts[idx] = (item, part_type, var)
 
+        # Update FS dropdown to match the most common original partition type
+        fs_types = [t for _, t, _ in self._parts.values() if t in ("ext", "erofs", "f2fs")]
+        if fs_types:
+            from collections import Counter
+            most_common = Counter(fs_types).most_common(1)[0][0]
+            self._fs_var.set(most_common)
+
         if not self._parts:
             ctk.CTkLabel(
                 self._part_frame,
@@ -538,7 +545,10 @@ class PackPage(BasePage):
                     elif ptype == 'dtbo':
                         run_module.makedtbo(name, project_dir)
                     else:
-                        run_module.inpacker(name, project_dir, form, imgtype, json_)
+                        # Use the partition's original FS type from parts_info,
+                        # fall back to the dropdown selection
+                        fs_type = json_.get(name, imgtype)
+                        run_module.inpacker(name, project_dir, form, fs_type, json_)
                 except Exception as e:
                     import traceback
                     self.app.console_print(f"[ERROR] {name}: {e}\n")

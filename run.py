@@ -1595,6 +1595,15 @@ def inpacker(name, project, form, ftype, json_=None):
     utc = int(time.time()) if not settings.utcstamp else settings.utcstamp
     out_img = project + os.sep + "TI_out" + os.sep + name + ".img"
     in_files = project + os.sep + name + os.sep
+    # Remove .DS_Store files on macOS - they cause packing failures and don't belong in Android images
+    if plat.system() == 'Darwin':
+        for root_, dirs_, files_ in os.walk(in_files):
+            for f_ in files_:
+                if f_ == '.DS_Store':
+                    try:
+                        os.remove(os.path.join(root_, f_))
+                    except OSError:
+                        pass
     img_size0 = int(cat(project + os.sep + "config" + os.sep + name + "_size.txt")) if os.path.exists(
         project + os.sep + "config" + os.sep + name + "_size.txt") else 0
     img_size1 = dirsize(in_files, 1, 1).rsize_v
